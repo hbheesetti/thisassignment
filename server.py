@@ -1,6 +1,5 @@
-#  coding: utf-8 
+# coding: utf-8 
 import socketserver
-
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +31,25 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def handle(self):
         self.data = self.request.recv(1024).strip()
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        self.parse_request(self.data)
+        body = self.handle_req()
+        res =  "HTTP/1.1 200 OK\n"+"Content-Type: text/css\n"+"\n"+body+"\n"
+        self.request.sendall(bytearray(res,'utf-8'))
+
+    def parse_request(self, req):
+        lines = req.splitlines()
+        print(lines)
+        arr = lines[0].split(b' ')
+        self.method = arr[0]
+        self.path = arr[1]
+
+    def handle_req(self):
+        x = ""
+        if self.method == b'GET':
+            path = "www"+ self.path.decode()
+            file = open(path, "r")
+            x = file.read()
+        return x 
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080

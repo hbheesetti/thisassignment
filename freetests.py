@@ -17,6 +17,7 @@
 
 from urllib import request
 import unittest
+import http
 
 BASEURL = "http://127.0.0.1:8080"
 
@@ -27,7 +28,10 @@ class TestYourWebserver(unittest.TestCase):
 
     def test_css(self):
         url = self.baseurl + "/base.css"
-        req = request.urlopen(url, None, 3)
+        try:
+            req = request.urlopen(url, None, 3)
+        except http.client.HTTPException as e:
+            print(e)
         self.assertTrue( req.getcode()  == 200 , "200 OK Not FOUND!")
         self.assertTrue( req.info().get_content_type() == "text/css", ("Bad mimetype for css! %s" % req.info().get_content_type()))
 
