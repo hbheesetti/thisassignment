@@ -1,5 +1,6 @@
 # coding: utf-8 
 import socketserver
+import mimetypes
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,22 +34,32 @@ class MyWebServer(socketserver.BaseRequestHandler):
         print ("Got a request of: %s\n" % self.data)
         self.parse_request(self.data)
         body = self.handle_req()
-        res =  "HTTP/1.1 200 OK\n"+"Content-Type: text/css\n"+"\n"+body+"\n"
+        res =  "HTTP/1.1 404 OK\n"+"Content-Type: "+self.mimetype+"\n"+"\n"+"body:"+body+"\n"
         self.request.sendall(bytearray(res,'utf-8'))
 
     def parse_request(self, req):
         lines = req.splitlines()
-        print(lines)
         arr = lines[0].split(b' ')
         self.method = arr[0]
-        self.path = arr[1]
+        self.path = arr[1].decode()
 
     def handle_req(self):
         x = ""
         if self.method == b'GET':
-            path = "www"+ self.path.decode()
-            file = open(path, "r")
-            x = file.read()
+            print(self.path)
+            if self.path[len(self.path)-1] == '/':
+                path = "www"+self.path+"index.html"
+            else:
+                path = "www"+ self.path
+            self.mimetype = mimetypes.guess_type(path)[0]
+            try:
+                file = open(path, "r")
+                x = file.read()
+            except FileNotFoundError as e:
+                
+            # print(path)
+            # file = open(path, "r")
+            # print(x)
         return x 
 
 if __name__ == "__main__":
