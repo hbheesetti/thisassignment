@@ -1,7 +1,7 @@
 # coding: utf-8 
 import socketserver
 import mimetypes
-# Copyright 2013 Abram Hindle, Eddie Antonio Santos
+# Copyright 2023 Abram Hindle, Eddie Antonio Santos, Hari Bheesetti
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,33 +34,50 @@ class MyWebServer(socketserver.BaseRequestHandler):
         print ("Got a request of: %s\n" % self.data)
         self.parse_request(self.data)
         body = self.handle_req()
-        res =  "HTTP/1.1 404 OK\n"+"Content-Type: "+self.mimetype+"\n"+"\n"+"body:"+body+"\n"
+        res =  "HTTP/1.1 "+ str(self.status)+ "\n"+"Content-Type: "+self.mimetype+"\n"+"\n"+body+"\n"
         self.request.sendall(bytearray(res,'utf-8'))
 
     def parse_request(self, req):
+        req = req.decode()
         lines = req.splitlines()
-        arr = lines[0].split(b' ')
+        arr = lines[0].split(' ')
         self.method = arr[0]
-        self.path = arr[1].decode()
+        self.path = arr[1]
 
     def handle_req(self):
-        x = ""
-        if self.method == b'GET':
-            print(self.path)
-            if self.path[len(self.path)-1] == '/':
+        x = " "
+        if self.method == 'GET':
+            print("path:"+self.path)
+            if self.path == "/" or self.path[len(self.path)-1] == '/':
                 path = "www"+self.path+"index.html"
+                self.status = 200
+            elif self.path.endswith(".html"):
+                path = "www"+self.path
+                self.status = 200
+            elif self.path.endswith(".css"):
+                path = "www"+self.path
+                self.status = 200
             else:
-                path = "www"+ self.path
+                path = "www"+ self.path + "/index.html"
+                self.status = 301
             self.mimetype = mimetypes.guess_type(path)[0]
             try:
                 file = open(path, "r")
                 x = file.read()
             except FileNotFoundError as e:
-                
-            # print(path)
-            # file = open(path, "r")
-            # print(x)
-        return x 
+                x = "404 NOT FOUND!"
+                self.status = 404
+                self.mimetype= " "
+            except NotADirectoryError as e:
+                x = "404 NOT FOUND!"
+                self.status = 404
+                self.mimetype= " "
+            print(x)
+        else:
+            self.status = 405
+            self.mimetype = " "
+            x = "405 NOT FOUND!"
+        return x
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
